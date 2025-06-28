@@ -16,46 +16,139 @@ INSTRUCTIONS / CONSIDERATIONS:
 7. Customer can only close an account if there is no loan, AND if the balance is zero. If this condition is not met, just return the state. If the condition is met, the account is deactivated and all money is withdrawn. The account basically gets back to the initial state
 */
 
+import { useReducer } from "react";
+
 const initialState = {
   balance: 0,
   loan: 0,
   isActive: false,
+  loanActive: null,
 };
 
+function reducerFn(state, action) {
+  console.log("state", state);
+  console.log("action", action);
+
+  switch (action.type) {
+    case "open":
+      console.log("open account");
+      return { ...state, balance: 50, isActive: true };
+    case "deposit":
+      console.log("deposit 150");
+      return { ...state, balance: state.balance + action.payload };
+    case "withdraw":
+      console.log("withdraw 50");
+      return {
+        ...state,
+        balance:
+          state.balance >= action.payload
+            ? state.balance - action.payload
+            : state.balance,
+      };
+    case "loan":
+      console.log("loan 5000");
+      if (state.loan > 0) return state;
+      return {
+        ...state,
+        loan: state.loan + action.payload,
+        balance: state.balance + action.payload,
+        loanActive: true,
+      };
+    case "payloan":
+      if (state.loan === 0 || state.balance < state.loan) return state;
+      return {
+        ...state,
+        balance:
+          state.balance >= state.loan
+            ? state.balance - state.loan
+            : state.balance,
+        loan: 0,
+        loanActive: state.loan === 0 ? null : false,
+      };
+    case "close":
+      console.log("close account");
+      if (state.balance > 0) return state;
+      return {
+        ...state,
+        balance: 0,
+        loan: 0,
+        isActive: false,
+        loanActive: null,
+      };
+  }
+}
+
 export default function App() {
+  const [state, dispatch] = useReducer(reducerFn, initialState);
+
+  const { balance, isActive, loan, loanActive } = state;
+
   return (
     <div className="App">
       <h1>useReducer Bank Account</h1>
-      <p>Balance: X</p>
-      <p>Loan: X</p>
+      <p>Balance: {balance}</p>
+      <p>Loan: {loan}</p>
 
       <p>
-        <button onClick={() => {}} disabled={false}>
+        <button
+          onClick={() => {
+            dispatch({ type: "open" });
+          }}
+          disabled={isActive ? true : false}
+        >
           Open account
         </button>
       </p>
+
       <p>
-        <button onClick={() => {}} disabled={false}>
+        <button
+          onClick={() => {
+            dispatch({ type: "deposit", payload: 150 });
+          }}
+          disabled={isActive ? false : true}
+        >
           Deposit 150
         </button>
       </p>
       <p>
-        <button onClick={() => {}} disabled={false}>
+        <button
+          onClick={() => {
+            dispatch({ type: "withdraw", payload: 50 });
+          }}
+          disabled={isActive ? false : true}
+        >
           Withdraw 50
         </button>
       </p>
       <p>
-        <button onClick={() => {}} disabled={false}>
-          Request a loan of 5000
-        </button>
+        {!loanActive && (
+          <button
+            onClick={() => {
+              dispatch({ type: "loan", payload: 5000 });
+            }}
+            disabled={isActive ? false : true}
+          >
+            Request a loan of 5000
+          </button>
+        )}
       </p>
       <p>
-        <button onClick={() => {}} disabled={false}>
+        <button
+          onClick={() => {
+            loan && dispatch({ type: "payloan" });
+          }}
+          disabled={isActive ? false : true}
+        >
           Pay loan
         </button>
       </p>
       <p>
-        <button onClick={() => {}} disabled={false}>
+        <button
+          onClick={() => {
+            dispatch({ type: "close" });
+          }}
+          disabled={isActive ? false : true}
+        >
           Close account
         </button>
       </p>
